@@ -1,0 +1,72 @@
+---
+- name: openldap packages are installed
+  yum: name={{item}} state=present
+  with_items:
+  - openldap-servers
+  - openldap-clients
+  - sssd
+  - perl-LDAP
+
+- name: copy DB_CONFIG
+  template: 
+    src=DB_CONFIG 
+    dest=/var/lib/ldap/DB_CONFIG 
+    owner={{ openldap_user }} 
+    group={{ openldap_group }}
+
+- name: remove old config
+  file: path=/etc/openldap/slapd.d state=absent
+
+- name: set the root pw
+  shell: slappasswd -s {{openldap_root_pw}}
+  register: root_password
+
+- name: copy slapd.conf
+  template: 
+    src=slapd.conf 
+    dest=/etc/openldap/slapd.conf
+    owner={{ openldap_user }}
+    group={{ openldap_group }}
+  notify: 
+  - restart slapd
+
+- name: copy ldap.conf
+  template:
+    src=ldap.conf
+    dest=/etc/openldap/ldap.conf
+    owner={{ openldap_user }}
+    group={{ openldap_group }}
+  notify:
+  - restart slapd
+
+- name: create database
+  file:
+    path=/var/lib/ldap/{{ openldap_domain }} 
+    state=directory
+    owner={{ openldap_user }}
+    group={{ openldap_group }}
+
+- name: create cert directory
+  file:
+    path=/etc/openldap/certs 
+    state=directory
+    owner={{ openldap_user }}
+    group={{ openldap_group }}
+
+- name: ldap sysconfig
+  template: 
+    src=sysconfig_ldap 
+    dest=/etc/sysconfig/ldap 
+    mode=0755
+  notify:
+  - restart slapd
+
+- name: start the slapd service
+  service: name=slapd state=started enabled=yes
+
+- name: copy the template for creating base dn
+  template: src=domain.ldif dest=/tmp
+
+- name: add the base domain
+  shell: ldapadd -h localhost -x -D "cn=Manager,dc={{ openldap_domain.split('.')[0] }},dc={{ openldap_domain.split('.')[1] }}" -w {{ openldap_root_pw }} -f /tmp/domain.ldif && touch /etc/openldap/rootdn_created 
+    creates=/etc/openldap/rootdn_created

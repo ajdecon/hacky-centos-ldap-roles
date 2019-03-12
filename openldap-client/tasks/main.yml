@@ -1,0 +1,44 @@
+---
+- name: install openldap packages
+  yum: name={{item}} state=present
+  with_items:
+  - openldap-clients
+  - nss-pam-ldapd
+
+- name: ldap.conf is configured
+  template: 
+    src=ldap.conf 
+    dest=/etc/openldap/ldap.conf 
+
+- name: nslcd.conf is configurd
+  template:
+    src=nslcd.conf
+    dest=/etc/nslcd.conf
+    owner=nslcd
+    group=ldap
+  notify:
+  - restart nslcd
+
+- name: nslcd is running
+  service: name=nslcd state=started enabled=yes
+
+- name: nscd.conf is configured
+  template:
+    src=nscd.conf
+    dest=/etc/nscd.conf
+  notify:
+  - restart nscd
+
+- name: nscd is running
+  service: name=nscd state=started enabled=yes
+
+- name: pam.d/system-auth is configured
+  copy:
+    src=system-auth
+    dest=/etc/pam.d/system-auth
+
+- name: nsswitch.conf is configured
+  template:
+    src=nsswitch.conf
+    dest=/etc/nsswitch.conf
+

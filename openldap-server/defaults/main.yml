@@ -1,0 +1,9 @@
+---
+openldap_root_pw: "4PByEbzE"
+openldap_user: ldap
+openldap_group: ldap
+openldap_country: US
+openldap_state: CA
+openldap_location: "Santa Clara"
+openldap_organization: Test
+openldap_domain: "example.org"

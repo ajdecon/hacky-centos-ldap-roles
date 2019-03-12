@@ -1,0 +1,4 @@
+---
+openldap_domain: example.org
+openldap_user: ldap
+openldap_group: ldap
